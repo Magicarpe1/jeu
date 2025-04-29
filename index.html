@@ -2,127 +2,108 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Choisis ta réduction</title>
+  <title>Jeu des réductions</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      background: #f0f0f0;
+      font-family: Arial, sans-serif;
       margin: 0;
-      background-color: #f7f7f7;
     }
-
     .game-container {
       display: flex;
-      gap: 20px;
+      gap: 15px;
     }
-
     .card {
       width: 100px;
       height: 150px;
       perspective: 1000px;
       cursor: pointer;
     }
-
     .card-inner {
-      position: relative;
       width: 100%;
       height: 100%;
+      position: relative;
       transition: transform 0.8s;
       transform-style: preserve-3d;
     }
-
     .card.flip .card-inner {
       transform: rotateY(180deg);
     }
-
-    .card-front,
-    .card-back {
+    .card-front, .card-back {
       position: absolute;
       width: 100%;
       height: 100%;
       backface-visibility: hidden;
-      border-radius: 8px;
       display: flex;
-      justify-content: center;
       align-items: center;
-      font-weight: bold;
-      font-size: 20px;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 22px;
       color: white;
+      font-weight: bold;
     }
-
     .card-front {
-      background-color: #ff6f61;
+      background: #ff5e57;
     }
-
     .card-back {
-      background-color: #444;
+      background: #34495e;
       transform: rotateY(180deg);
     }
   </style>
 </head>
 <body>
+  <div class="game-container">
+    <div class="card"><div class="card-inner">
+      <div class="card-front">-5%</div>
+      <div class="card-back">?</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="card-front">-10%</div>
+      <div class="card-back">?</div>
+    </div></div>
+    <div class="card"><div class="card-inner">
+      <div class="card-front">-15%</div>
+      <div class="card-back">?</div>
+    </div></div>
+  </div>
 
-<div class="game-container">
-  <div class="card"><div class="card-inner">
-    <div class="card-front">-5%</div>
-    <div class="card-back">?</div>
-  </div></div>
-  
-  <div class="card"><div class="card-inner">
-    <div class="card-front">-10%</div>
-    <div class="card-back">?</div>
-  </div></div>
-  
-  <div class="card"><div class="card-inner">
-    <div class="card-front">-15%</div>
-    <div class="card-back">?</div>
-  </div></div>
-</div>
-
-<script>
-  const cards = document.querySelectorAll('.card');
-  let locked = true;
-
-  // Fonction pour retourner toutes les cartes face cachée
-  function hideCards() {
-    cards.forEach(card => card.classList.add('flip'));
-  }
-
-  // Mélange les cartes dans l'interface
-  function shuffleCards() {
+  <script>
     const container = document.querySelector('.game-container');
-    for (let i = container.children.length; i >= 0; i--) {
-      container.appendChild(container.children[Math.random() * i | 0]);
-    }
-  }
+    const cards = document.querySelectorAll('.card');
+    let locked = true;
 
-  // Initialisation
-  setTimeout(() => {
-    hideCards();
+    // Afficher face visible pendant 3 sec, puis retourner
     setTimeout(() => {
-      shuffleCards();
-      locked = false; // déverrouiller les clics après mélange
-    }, 1000);
-  }, 3000); // délai initial de 3 secondes pour afficher les réductions
+      cards.forEach(card => card.classList.add('flip'));
 
-  // Ajouter événement click pour révéler la carte choisie
-  cards.forEach(card => {
-    card.addEventListener('click', () => {
-      if (locked) return; // empêcher clics multiples
-      locked = true;
-      card.classList.remove('flip');
-      alert(`Bravo ! Tu as gagné ${card.querySelector('.card-front').textContent} de réduction !`);
+      // Mélanger après 1 seconde (le temps que la carte soit retournée)
+      setTimeout(() => {
+        for (let i = container.children.length; i >= 0; i--) {
+          container.appendChild(container.children[Math.random() * i | 0]);
+        }
+        locked = false;  // permettre clic
+      }, 1000);
+
+    }, 3000);
+
+    // Action au clic : retourner la carte choisie
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        if (locked || !card.classList.contains('flip')) return;
+
+        card.classList.remove('flip');
+        locked = true; // empêche autre clic
+        const discount = card.querySelector('.card-front').textContent;
+
+        setTimeout(() => {
+          alert(`🎉 Bravo ! Tu gagnes une réduction de ${discount}`);
+        }, 500);
+      });
     });
-  });
-</script>
-
-</body>
-</html>
-
-
+  </script>
 </body>
 </html>
