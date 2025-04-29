@@ -2,58 +2,45 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Jeu des réductions</title>
+  <title>Jeu des réductions — Mélange animé</title>
   <style>
     body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #f0f0f0;
-      font-family: Arial, sans-serif;
-      margin: 0;
+      margin: 0; padding: 0;
+      display: flex; justify-content: center; align-items: center;
+      height: 100vh; background: #ececec;
+      font-family: sans-serif;
     }
     .game-container {
-      display: flex;
-      gap: 15px;
       position: relative;
+      width: 380px;  /* 3 cartes × (100px + 20px gap) - 20px */
+      height: 150px;
     }
     .card {
-      width: 100px;
-      height: 150px;
-      perspective: 1000px;
+      width: 100px; height: 150px;
+      position: absolute; top: 0; left: 0;
+      perspective: 800px;
+      transition: transform 0.3s ease;
       cursor: pointer;
-      /* ajout pour animer le déplacement de la carte */
-      transition: transform 0.5s ease;
     }
     .card-inner {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
       position: relative;
-      transition: transform 0.8s;
       transform-style: preserve-3d;
+      transition: transform 0.6s;
     }
-    .card.flip .card-inner {
+    .card.flipped .card-inner {
       transform: rotateY(180deg);
     }
-    .card-front, .card-back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
+    .card-face {
+      position: absolute; width: 100%; height: 100%;
       backface-visibility: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; justify-content: center; align-items: center;
       border-radius: 10px;
-      font-size: 22px;
-      color: white;
-      font-weight: bold;
+      color: white; font-size: 24px; font-weight: bold;
     }
-    .card-front {
-      background: #ff5e57;
-    }
-    .card-back {
-      background: #34495e;
+    .front { background: #e74c3c; }
+    .back {
+      background: #2c3e50;
       transform: rotateY(180deg);
     }
   </style>
@@ -61,71 +48,72 @@
 <body>
   <div class="game-container">
     <div class="card"><div class="card-inner">
-      <div class="card-front">-5%</div>
-      <div class="card-back">?</div>
+      <div class="card-face front">-5 %</div>
+      <div class="card-face back">?</div>
     </div></div>
     <div class="card"><div class="card-inner">
-      <div class="card-front">-100%</div>
-      <div class="card-back">?</div>
+      <div class="card-face front">-10 %</div>
+      <div class="card-face back">?</div>
     </div></div>
     <div class="card"><div class="card-inner">
-      <div class="card-front">-15%</div>
-      <div class="card-back">?</div>
+      <div class="card-face front">-15 %</div>
+      <div class="card-face back">?</div>
     </div></div>
   </div>
 
   <script>
     const container = document.querySelector('.game-container');
-    const cards = Array.from(document.querySelectorAll('.card'));
-    let locked = true;
+    const cards     = Array.from(container.querySelectorAll('.card'));
+    const cardW     = 100, gap = 20;
+    const positions = cards.map((_,i) => i * (cardW + gap));
+    let locked      = true;
 
-    // Fonction qui anime le "mélange" visuel des cartes
-    function animateShuffle() {
-      locked = true;
-      // 1) Éparpille les cartes aléatoirement
-      cards.forEach(card => {
-        const maxX = container.clientWidth / 2;
-        const maxY = 50;
-        const offsetX = Math.random() * maxX * 2 - maxX;
-        const offsetY = Math.random() * maxY * 2 - maxY;
-        card.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-      });
-      // 2) Rassemble et réordonne les cartes dans le DOM
-      setTimeout(() => {
-        // Rapproche visuellement
-        cards.forEach(card => {
-          card.style.transform = `translate(0, 0)`;
-        });
-        // Puis, une fois le retour animé, on mélange l'ordre DOM
-        setTimeout(() => {
-          for (let i = container.children.length; i >= 0; i--) {
-            container.appendChild(container.children[Math.floor(Math.random() * i)]);
-          }
-          locked = false; // le joueur peut cliquer
-        }, 500);
-      }, 500);
-    }
+    // 1) Position initiale des cartes et stockage de leur "ordre"
+    cards.forEach((c,i) => {
+      c.dataset.order = i;
+      c.style.transform = `translateX(${positions[i]}px)`;
+    });
 
-    // 1) Au chargement : laisse voir les faces avant 3 sec
+    // 2) On affiche les fronts 3 s, puis on flip en back
     setTimeout(() => {
-      // 2) Retourne toutes les cartes pour cacher les réductions
-      cards.forEach(card => card.classList.add('flip'));
-      // 3) Après 1 sec de retournement, lance l'animation de mélange
-      setTimeout(animateShuffle, 1000);
+      cards.forEach(c => c.classList.add('flipped'));
+      // 3) après 0.8 s de flip, on lance le mélange
+      setTimeout(() => shuffleSteps(8), 800);
     }, 3000);
 
-    // Clic sur une carte dévoilée pour gagner la réduction
+    // Fonction de mélange visuel par échanges successifs
+    function shuffleSteps(times) {
+      if (times === 0) {
+        // Fin du mélange, on déverrouille le clic
+        locked = false;
+        return;
+      }
+      // Choix de deux cartes à échanger
+      const i = Math.floor(Math.random() * cards.length);
+      let   j;
+      do { j = Math.floor(Math.random() * cards.length) } while (j === i);
+
+      const ci = cards[i], cj = cards[j];
+      const oi = +ci.dataset.order, oj = +cj.dataset.order;
+
+      // échange des "order" et anim translation
+      ci.dataset.order = oj;
+      cj.dataset.order = oi;
+      ci.style.transform = `translateX(${positions[oj]}px)`;
+      cj.style.transform = `translateX(${positions[oi]}px)`;
+
+      // on recommence après 300 ms
+      setTimeout(() => shuffleSteps(times - 1), 300);
+    }
+
+    // 4) Au clic : si c’est déverrouillé et qu’on est en back, on découvre
     cards.forEach(card => {
       card.addEventListener('click', () => {
-        // On n'autorise le clic que si le shuffle est terminé et que la carte est face cachée
-        if (locked || !card.classList.contains('flip')) return;
-        // Découvre la carte
-        card.classList.remove('flip');
+        if (locked || !card.classList.contains('flipped')) return;
         locked = true;
-        const discount = card.querySelector('.card-front').textContent;
-        setTimeout(() => {
-          alert(`🎉 Bravo ! Tu gagnes une réduction de ${discount}`);
-        }, 500);
+        card.classList.remove('flipped');
+        const discount = card.querySelector('.front').textContent;
+        setTimeout(() => alert(`🎉 Bravo, vous gagnez ${discount} !`), 400);
       });
     });
   </script>
