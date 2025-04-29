@@ -16,12 +16,15 @@
     .game-container {
       display: flex;
       gap: 15px;
+      position: relative;
     }
     .card {
       width: 100px;
       height: 150px;
       perspective: 1000px;
       cursor: pointer;
+      /* ajout pour animer le déplacement de la carte */
+      transition: transform 0.5s ease;
     }
     .card-inner {
       width: 100%;
@@ -73,32 +76,53 @@
 
   <script>
     const container = document.querySelector('.game-container');
-    const cards = document.querySelectorAll('.card');
+    const cards = Array.from(document.querySelectorAll('.card'));
     let locked = true;
 
-    // Afficher face visible pendant 3 sec, puis retourner
-    setTimeout(() => {
-      cards.forEach(card => card.classList.add('flip'));
-
-      // Mélanger après 1 seconde (le temps que la carte soit retournée)
+    // Fonction qui anime le "mélange" visuel des cartes
+    function animateShuffle() {
+      locked = true;
+      // 1) Éparpille les cartes aléatoirement
+      cards.forEach(card => {
+        const maxX = container.clientWidth / 2;
+        const maxY = 50;
+        const offsetX = Math.random() * maxX * 2 - maxX;
+        const offsetY = Math.random() * maxY * 2 - maxY;
+        card.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      });
+      // 2) Rassemble et réordonne les cartes dans le DOM
       setTimeout(() => {
-        for (let i = container.children.length; i >= 0; i--) {
-          container.appendChild(container.children[Math.random() * i | 0]);
-        }
-        locked = false;  // permettre clic
-      }, 1000);
+        // Rapproche visuellement
+        cards.forEach(card => {
+          card.style.transform = `translate(0, 0)`;
+        });
+        // Puis, une fois le retour animé, on mélange l'ordre DOM
+        setTimeout(() => {
+          for (let i = container.children.length; i >= 0; i--) {
+            container.appendChild(container.children[Math.floor(Math.random() * i)]);
+          }
+          locked = false; // le joueur peut cliquer
+        }, 500);
+      }, 500);
+    }
 
+    // 1) Au chargement : laisse voir les faces avant 3 sec
+    setTimeout(() => {
+      // 2) Retourne toutes les cartes pour cacher les réductions
+      cards.forEach(card => card.classList.add('flip'));
+      // 3) Après 1 sec de retournement, lance l'animation de mélange
+      setTimeout(animateShuffle, 1000);
     }, 3000);
 
-    // Action au clic : retourner la carte choisie
+    // Clic sur une carte dévoilée pour gagner la réduction
     cards.forEach(card => {
       card.addEventListener('click', () => {
+        // On n'autorise le clic que si le shuffle est terminé et que la carte est face cachée
         if (locked || !card.classList.contains('flip')) return;
-
+        // Découvre la carte
         card.classList.remove('flip');
-        locked = true; // empêche autre clic
+        locked = true;
         const discount = card.querySelector('.card-front').textContent;
-
         setTimeout(() => {
           alert(`🎉 Bravo ! Tu gagnes une réduction de ${discount}`);
         }, 500);
